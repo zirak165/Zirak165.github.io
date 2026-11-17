@@ -2,7 +2,7 @@ name: Deploy Eleventy to GitHub Pages
 
 on:
   push:
-    branches: ["main"] # اگر شاخه اصلی تو master است، این را به master تغییر بده
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
@@ -33,10 +33,34 @@ jobs:
       - name: Build site
         run: npm run build:site
         
+      - name: Find output directory
+        id: find_dir
+        run: |
+          echo "بررسی پوشه‌های احتمالی خروجی..."
+          if [ -d "_site" ]; then
+            echo "dir=_site" >> $GITHUB_OUTPUT
+            echo "پوشه _site پیدا شد."
+          elif [ -d "dist" ]; then
+            echo "dir=dist" >> $GITHUB_OUTPUT
+            echo "پوشه dist پیدا شد."
+          elif [ -d "public" ]; then
+            echo "dir=public" >> $GITHUB_OUTPUT
+            echo "پوشه public پیدا شد."
+          elif [ -d "_output" ]; then
+            echo "dir=_output" >> $GITHUB_OUTPUT
+            echo "پوشه _output پیدا شد."
+          else
+            echo "هیچ پوشه استانداردی پیدا نشد. لیست فایل‌ها:"
+            ls -la
+            # اگر واقعا پیدا نشد، خطا می‌دهد تا در لاگ ببینیم
+            exit 1
+          fi
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '_site' # اگر خروجی پروژه‌ات در پوشه دیگری است (مثل dist)، اینجا را عوض کن
+          # اینجا از خروجی مرحله قبل استفاده می‌کند
+          path: ${{ steps.find_dir.outputs.dir }}
 
   deploy:
     environment:
