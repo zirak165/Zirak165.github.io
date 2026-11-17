@@ -26,28 +26,39 @@ jobs:
         with:
           node-version: '20'
           
+      - name: Find project directory
+        id: find_project
+        run: |
+          # پیدا کردن مسیری که package.json در آن قرار دارد
+          PROJ_DIR=$(find . -name "package.json" -not -path "*/node_modules/*" | head -n 1 | xargs dirname)
+          if [ -z "$PROJ_DIR" ] || [ "$PROJ_DIR" == "." ]; then
+            echo "dir=." >> $GITHUB_OUTPUT
+          else
+            echo "dir=$PROJ_DIR" >> $GITHUB_OUTPUT
+          fi
+          echo "پروژه در مسیر $PROJ_DIR پیدا شد."
+
       - name: Install dependencies
+        working-directory: ${{ steps.find_project.outputs.dir }}
         run: npm install
         
       - name: Build site
+        working-directory: ${{ steps.find_project.outputs.dir }}
         run: npm run build:site
         
       - name: Find output directory
         id: find_dir
+        working-directory: ${{ steps.find_project.outputs.dir }}
         run: |
           echo "بررسی پوشه‌های احتمالی خروجی..."
           if [ -d "_site" ]; then
             echo "dir=_site" >> $GITHUB_OUTPUT
-            echo "پوشه _site پیدا شد."
           elif [ -d "dist" ]; then
             echo "dir=dist" >> $GITHUB_OUTPUT
-            echo "پوشه dist پیدا شد."
           elif [ -d "public" ]; then
             echo "dir=public" >> $GITHUB_OUTPUT
-            echo "پوشه public پیدا شد."
           elif [ -d "_output" ]; then
             echo "dir=_output" >> $GITHUB_OUTPUT
-            echo "پوشه _output پیدا شد."
           else
             echo "هیچ پوشه استانداردی پیدا نشد. لیست فایل‌ها:"
             ls -la
@@ -57,7 +68,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ${{ steps.find_dir.outputs.dir }}
+          # ترکیب مسیر پروژه و پوشه خروجی
+          path: ${{ steps.find_project.outputs.dir }}/${{ steps.find_dir.outputs.dir }}
 
   deploy:
     environment:
