@@ -21,22 +21,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
+      - name: Extract ZIP
+        run: |
+          # پیدا کردن اولین فایل زیپ در مخزن و باز کردن آن
+          ZIP_FILE=$(find . -maxdepth 1 -name "*.zip" | head -n 1)
+          if [ -n "$ZIP_FILE" ]; then
+            echo "در حال باز کردن فایل: $ZIP_FILE"
+            unzip -q "$ZIP_FILE" -d extracted_project
+          else
+            echo "هیچ فایل zip پیدا نشد. فرض می‌کنیم فایل‌ها از قبل باز شده‌اند."
+          fi
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          
+
       - name: Find project directory
         id: find_project
         run: |
-          # پیدا کردن مسیری که package.json در آن قرار دارد
+          # جستجو برای package.json در همه جا (حتی داخل پوشه‌ی extract شده)
           PROJ_DIR=$(find . -name "package.json" -not -path "*/node_modules/*" | head -n 1 | xargs dirname)
           if [ -z "$PROJ_DIR" ] || [ "$PROJ_DIR" == "." ]; then
             echo "dir=." >> $GITHUB_OUTPUT
           else
             echo "dir=$PROJ_DIR" >> $GITHUB_OUTPUT
           fi
-          echo "پروژه در مسیر $PROJ_DIR پیدا شد."
 
       - name: Install dependencies
         working-directory: ${{ steps.find_project.outputs.dir }}
@@ -50,17 +60,12 @@ jobs:
         id: find_dir
         working-directory: ${{ steps.find_project.outputs.dir }}
         run: |
-          echo "بررسی پوشه‌های احتمالی خروجی..."
-          if [ -d "_site" ]; then
-            echo "dir=_site" >> $GITHUB_OUTPUT
-          elif [ -d "dist" ]; then
-            echo "dir=dist" >> $GITHUB_OUTPUT
-          elif [ -d "public" ]; then
-            echo "dir=public" >> $GITHUB_OUTPUT
-          elif [ -d "_output" ]; then
-            echo "dir=_output" >> $GITHUB_OUTPUT
+          if [ -d "_site" ]; then echo "dir=_site" >> $GITHUB_OUTPUT
+          elif [ -d "dist" ]; then echo "dir=dist" >> $GITHUB_OUTPUT
+          elif [ -d "public" ]; then echo "dir=public" >> $GITHUB_OUTPUT
+          elif [ -d "_output" ]; then echo "dir=_output" >> $GITHUB_OUTPUT
           else
-            echo "هیچ پوشه استانداردی پیدا نشد. لیست فایل‌ها:"
+            echo "هیچ پوشه استانداردی پیدا نشد."
             ls -la
             exit 1
           fi
@@ -68,7 +73,6 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # ترکیب مسیر پروژه و پوشه خروجی
           path: ${{ steps.find_project.outputs.dir }}/${{ steps.find_dir.outputs.dir }}
 
   deploy:
