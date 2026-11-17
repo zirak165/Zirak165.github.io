@@ -23,13 +23,12 @@ jobs:
       
       - name: Extract ZIP
         run: |
-          # پیدا کردن اولین فایل زیپ در مخزن و باز کردن آن
           ZIP_FILE=$(find . -maxdepth 1 -name "*.zip" | head -n 1)
           if [ -n "$ZIP_FILE" ]; then
             echo "در حال باز کردن فایل: $ZIP_FILE"
             unzip -q "$ZIP_FILE" -d extracted_project
           else
-            echo "هیچ فایل zip پیدا نشد. فرض می‌کنیم فایل‌ها از قبل باز شده‌اند."
+            echo "هیچ فایل zip پیدا نشد."
           fi
 
       - name: Setup Node
@@ -40,7 +39,6 @@ jobs:
       - name: Find project directory
         id: find_project
         run: |
-          # جستجو برای package.json در همه جا (حتی داخل پوشه‌ی extract شده)
           PROJ_DIR=$(find . -name "package.json" -not -path "*/node_modules/*" | head -n 1 | xargs dirname)
           if [ -z "$PROJ_DIR" ] || [ "$PROJ_DIR" == "." ]; then
             echo "dir=." >> $GITHUB_OUTPUT
