@@ -25,7 +25,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
           
       - name: Install dependencies
         run: npm install
@@ -52,14 +51,12 @@ jobs:
           else
             echo "هیچ پوشه استانداردی پیدا نشد. لیست فایل‌ها:"
             ls -la
-            # اگر واقعا پیدا نشد، خطا می‌دهد تا در لاگ ببینیم
             exit 1
           fi
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # اینجا از خروجی مرحله قبل استفاده می‌کند
           path: ${{ steps.find_dir.outputs.dir }}
 
   deploy:
