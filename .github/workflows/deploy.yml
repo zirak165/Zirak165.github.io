@@ -23,12 +23,14 @@ jobs:
       
       - name: Extract ZIP
         run: |
+          # پیدا کردن هر فایل زیپی در مخزن
           ZIP_FILE=$(find . -maxdepth 1 -name "*.zip" | head -n 1)
           if [ -n "$ZIP_FILE" ]; then
             echo "در حال باز کردن فایل: $ZIP_FILE"
             unzip -q "$ZIP_FILE" -d extracted_project
           else
-            echo "هیچ فایل zip پیدا نشد."
+            echo "هیچ فایل zip پیدا نشد. لطفا زیپ را آپلود کنید."
+            exit 1
           fi
 
       - name: Setup Node
@@ -39,12 +41,12 @@ jobs:
       - name: Find project directory
         id: find_project
         run: |
-          PROJ_DIR=$(find . -name "package.json" -not -path "*/node_modules/*" | head -n 1 | xargs dirname)
-          if [ -z "$PROJ_DIR" ] || [ "$PROJ_DIR" == "." ]; then
-            echo "dir=." >> $GITHUB_OUTPUT
-          else
-            echo "dir=$PROJ_DIR" >> $GITHUB_OUTPUT
+          PROJ_DIR=$(find extracted_project -name "package.json" -not -path "*/node_modules/*" | head -n 1 | xargs dirname)
+          if [ -z "$PROJ_DIR" ]; then
+            echo "پوشه پروژه پیدا نشد."
+            exit 1
           fi
+          echo "dir=$PROJ_DIR" >> $GITHUB_OUTPUT
 
       - name: Install dependencies
         working-directory: ${{ steps.find_project.outputs.dir }}
