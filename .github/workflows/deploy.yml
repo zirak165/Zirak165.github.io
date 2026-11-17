@@ -23,13 +23,12 @@ jobs:
       
       - name: Extract ZIP
         run: |
-          # پیدا کردن هر فایل زیپی در مخزن
           ZIP_FILE=$(find . -maxdepth 1 -name "*.zip" | head -n 1)
           if [ -n "$ZIP_FILE" ]; then
             echo "در حال باز کردن فایل: $ZIP_FILE"
             unzip -q "$ZIP_FILE" -d extracted_project
           else
-            echo "هیچ فایل zip پیدا نشد. لطفا زیپ را آپلود کنید."
+            echo "هیچ فایل zip پیدا نشد."
             exit 1
           fi
 
@@ -41,7 +40,10 @@ jobs:
       - name: Find project directory
         id: find_project
         run: |
-          PROJ_DIR=$(find extracted_project -name "package.json" -not -path "*/node_modules/*" | head -n 1 | xargs dirname)
+          # پیدا کردن مسیر فایل package.json با استفاده از find و xargs (مقاوم در برابر فاصله و نقطه)
+          find extracted_project -name "package.json" -not -path "*/node_modules/*" -print0 | head -z -n 1 | xargs -0 dirname > proj_path.txt
+          PROJ_DIR=$(cat proj_path.txt)
+          
           if [ -z "$PROJ_DIR" ]; then
             echo "پوشه پروژه پیدا نشد."
             exit 1
